@@ -36,7 +36,7 @@ sampled_tiles = ee.List(tiles).slice(0, 4000).getInfo()
 features = []
 for i, tile_geom_coords in enumerate(sampled_tiles):
     tile_geom = ee.Geometry.Rectangle(tile_geom_coords)
-    tile_id = f"tile_{i}"
+    tile_id = f"tile_{i}"           
 
     # get per-tile features
     elev = elevation.reduceRegion(reducer=ee.Reducer.mean(), geometry=tile_geom, scale=30).get('elevation')
@@ -56,7 +56,7 @@ for i, tile_geom_coords in enumerate(sampled_tiles):
         folder="EarthEngineExports",
         region=tile_geom,
         scale=10,
-        maxPixels=1e8
+        maxPixels=1e8 
     )
     export_task.start()
 
