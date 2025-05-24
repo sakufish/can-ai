@@ -2,9 +2,10 @@ import ee
 
 ee.Initialize(project='gen-lang-client-0972336843')
 
-# region of interest (area around west kenya)
-roi = ee.Geometry.Rectangle([33.9, -1.5, 35.3, 0.8])
-dx, dy = 0.01, 0.01  # around 1 km
+# region of interest centered on armenia
+roi = ee.Geometry.Rectangle([43.5, 38.5, 47.5, 41.5])  # smaller box
+
+dx, dy = 0.01, 0.01  # around 1 km per tile
 
 # get sentinel-2 data
 collection = ee.ImageCollection('COPERNICUS/S2_SR') \
@@ -17,43 +18,49 @@ composite = collection.median().select(['B4', 'B3', 'B2'])
 elevation = ee.Image('USGS/SRTMGL1_003')
 slope = ee.Terrain.slope(elevation)
 
-# make tiles, export images and compute features
-features = []
-tile_count = 0
-x = 33.9
-while x < 35.3:
-    y = -1.5
-    while y < 0.8:
-        tile_geom = ee.Geometry.Rectangle([x, y, x + dx, y + dy])
-        tile_id = f"tile_{round(x, 3)}_{round(y, 3)}"
-
-        # get per-tile features
-        elev = elevation.reduceRegion(reducer=ee.Reducer.mean(), geometry=tile_geom, scale=30).get('elevation')
-        slp = slope.reduceRegion(reducer=ee.Reducer.mean(), geometry=tile_geom, scale=30).get('slope')
-
-        feat = ee.Feature(tile_geom, {
-            'tile_id': tile_id,
-            'elevation': elev,
-            'slope': slp
-        })
-        features.append(feat)
-
-        # export image tile to drive
-        export_task = ee.batch.Export.image.toDrive(
-            image=composite.clip(tile_geom),
-            description=f"sentinel2_{tile_id}",
-            folder="EarthEngineExports",
-            region=tile_geom,
-            scale=10,
-            maxPixels=1e8
-        )
-        export_task.start()
-
-        tile_count += 1
+# generate tile grid
+tiles = []
+x = 43.5
+while x < 47.5:
+    y = 38.5
+    while y < 41.5:
+        tile = ee.Geometry.Rectangle([x, y, x + dx, y + dy])
+        tiles.append(tile)
         y += dy
     x += dx
 
-print(f"started export tasks for {tile_count} image tiles.")
+# randomly sample 4000 tiles
+sampled_tiles = ee.List(tiles).slice(0, 4000).getInfo()
+
+# make tiles, export images and compute features
+features = []
+for i, tile_geom_coords in enumerate(sampled_tiles):
+    tile_geom = ee.Geometry.Rectangle(tile_geom_coords)
+    tile_id = f"tile_{i}"
+
+    # get per-tile features
+    elev = elevation.reduceRegion(reducer=ee.Reducer.mean(), geometry=tile_geom, scale=30).get('elevation')
+    slp = slope.reduceRegion(reducer=ee.Reducer.mean(), geometry=tile_geom, scale=30).get('slope')
+
+    feat = ee.Feature(tile_geom, {
+        'tile_id': tile_id,
+        'elevation': elev,
+        'slope': slp
+    })
+    features.append(feat)
+
+    # export image tile to drive
+    export_task = ee.batch.Export.image.toDrive(
+        image=composite.clip(tile_geom),
+        description=f"sentinel2_{tile_id}",
+        folder="EarthEngineExports",
+        region=tile_geom,
+        scale=10,
+        maxPixels=1e8
+    )
+    export_task.start()
+
+print("started export tasks for image tiles.")
 
 # export feature table as csv
 feature_collection = ee.FeatureCollection(features)
