@@ -21,7 +21,6 @@ columns_to_keep = [
     'latitude',
     'longitude',
     '#status_id',
-    '#water_source_clean',
     '#water_source_category',
     '#distance_to_primary_road',
     '#distance_to_secondary_road',
@@ -41,6 +40,9 @@ df.columns = [c.replace('#', '').strip() for c in df.columns]
 numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 numeric_cols = [col for col in numeric_cols if col not in ['latitude', 'longitude']]
 
+# --- fill missing water source categories ---
+df['water_source_category'] = df['water_source_category'].fillna('unknown').replace('', 'unknown')
+
 # --- KNN impute all numeric columns ---
 for col in numeric_cols:
     known = df[df[col].notna()]
@@ -57,4 +59,4 @@ if 'is_urban' in df.columns:
     df['is_urban'] = df['is_urban'].where(df['is_urban'].isin(['true', 'false']), 'false')
 
 # --- export cleaned version ---
-df.to_csv('wpdx_cleaned3.csv', index=False)
+df.to_csv('wpdx_cleaned4.csv', index=False)
