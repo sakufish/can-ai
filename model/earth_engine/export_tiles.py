@@ -3,7 +3,7 @@ import ee
 ee.Initialize(project='gen-lang-client-0972336843')
 
 # --- parameters ---
-ROI_BOUNDS = [43.5, 38.5, 47.5, 41.5]
+ROI_BOUNDS = [33.9, -1.5, 35.3, 0.8] # changed to western kenya  
 dx, dy = 0.01, 0.01  # tile size
 NUM_TILES = 3000     # set to 3000 to fit within EE export quota
 
