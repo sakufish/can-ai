@@ -11,10 +11,19 @@ df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
 df = df.dropna(subset=['latitude', 'longitude'])
 
 # --- only include western kenya ---
+"""
 df = df[
     (df['latitude'] > -1.5) & (df['latitude'] < 0.8) &
     (df['longitude'] > 33.9) & (df['longitude'] < 35.3)
 ]
+"""
+
+# --- include all of kenya ---
+df = df[
+    (df['latitude'] > -5.0) & (df['latitude'] < 5.2) &
+    (df['longitude'] > 33.5) & (df['longitude'] < 42.1)
+]
+
 
 # --- keep relevant columns ---
 columns_to_keep = [
@@ -59,4 +68,4 @@ if 'is_urban' in df.columns:
     df['is_urban'] = df['is_urban'].where(df['is_urban'].isin(['true', 'false']), 'false')
 
 # --- export cleaned version ---
-df.to_csv('wpdx_cleaned4.csv', index=False)
+df.to_csv('kenya.csv', index=False)
