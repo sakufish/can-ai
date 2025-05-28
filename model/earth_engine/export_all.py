@@ -118,16 +118,17 @@ def add_attrs(tile):
     )
 
     # 7) elevation & slope 
-    elev = elevation.reduceRegion({
-        'reducer': ee.Reducer.mean(),
-        'geometry': tile_geom,
-        'scale': 30
-    }).get('elevation')
-    slp = slope.reduceRegion({
-        'reducer': ee.Reducer.mean(),
-        'geometry': tile_geom,
-        'scale': 30
-    }).get('slope')
+    elev = elevation.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=tile_geom,
+        scale=30
+    ).get('elevation')
+
+    slp = slope.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=tile_geom,
+        scale=30
+    ).get('slope')
 
     return tile.set({
         'score': var_score,
