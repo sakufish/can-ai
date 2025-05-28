@@ -3,7 +3,7 @@ import ee
 ee.Initialize(project='gen-lang-client-0972336843')
 
 # --- parameters ---
-ROI_BOUNDS = [34.89, -1.5, 36.29, 0.8]  # western Kenya (updated to include more land area)
+ROI_BOUNDS = [33.9, -1.5, 35.3, 0.8]  # western Kenya  
 dx, dy = 0.01, 0.01                 
 NUM_TILES = 3000   # gee queue quota  
 

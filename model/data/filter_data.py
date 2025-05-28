@@ -13,7 +13,7 @@ df = df.dropna(subset=['latitude', 'longitude'])
 # --- only include western kenya ---
 df = df[
     (df['latitude'] > -1.5) & (df['latitude'] < 0.8) &
-    (df['longitude'] > 34.89) & (df['longitude'] < 36.29)
+    (df['longitude'] > 33.9) & (df['longitude'] < 35.3)
 ]
 
 # --- keep relevant columns ---
