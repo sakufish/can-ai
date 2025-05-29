@@ -3,7 +3,7 @@ import ee
 ee.Initialize(project='gen-lang-client-0972336843')
 
 # --- parameters ---
-ROI_BOUNDS = [31.9, 0.2, 34.5, 2.5]  # kenya & uganda
+ROI_BOUNDS = [31.9, 0.2, 34.5, 2.5]  # parts of kenya & uganda
 dx, dy = 0.01, 0.01                 
 NUM_TILES = 3000   # gee queue quota  
 
@@ -156,7 +156,6 @@ feature_task = ee.batch.Export.table.toDrive(
 feature_task.start()
 print("feature csv export task started.")
 
-"""
 # --- export image tiles ---
 sampled_list = sampled_fc.toList(NUM_TILES)
 for i in range(NUM_TILES):
@@ -175,4 +174,3 @@ for i in range(NUM_TILES):
         print(f"started export task {i + 1} / {NUM_TILES}")
 
 print(f"started export tasks for {NUM_TILES} image tiles.")
-"""
