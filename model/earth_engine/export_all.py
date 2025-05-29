@@ -3,7 +3,7 @@ import ee
 ee.Initialize(project='gen-lang-client-0972336843')
 
 # --- parameters ---
-ROI_BOUNDS = [33.9, -1.5, 35.3, 0.8]  # western Kenya  
+ROI_BOUNDS = [31.9, 0.2, 34.5, 2.5]  # kenya & uganda
 dx, dy = 0.01, 0.01                 
 NUM_TILES = 3000   # gee queue quota  
 
@@ -18,7 +18,7 @@ collection = (
 composite = collection.median().select(['B4', 'B3', 'B2'])
 
 elevation = ee.Image('USGS/SRTMGL1_003')
-slope     = ee.Terrain.slope(elevation)
+slope = ee.Terrain.slope(elevation)
 
 # --- generate tile grids ---
 def make_tile(x, y):
@@ -36,12 +36,12 @@ def make_tile(x, y):
 xs = ee.List.sequence(ROI_BOUNDS[0], ROI_BOUNDS[2] - dx, dx)
 ys = ee.List.sequence(ROI_BOUNDS[1], ROI_BOUNDS[3] - dy, dy)
 tiles_nested = xs.map(lambda x: ys.map(lambda y: make_tile(x, y)))
-tiles_flat   = tiles_nested.flatten()
-tile_fc      = ee.FeatureCollection(tiles_flat)
-sampled_fc   = tile_fc.randomColumn().sort('random').limit(NUM_TILES)
+tiles_flat = tiles_nested.flatten()
+tile_fc = ee.FeatureCollection(tiles_flat)
+sampled_fc = tile_fc.randomColumn().sort('random').limit(NUM_TILES)
 
 # --- load water point dataset ---
-water_points = ee.FeatureCollection('users/cadenchen/wpdx_cleaned4')
+water_points = ee.FeatureCollection('users/cadenchen/kenya_expanded')
 
 # --- safe‐aggregate helpers ---
 def safe_aggregate_mean(fc, prop, default=0):
@@ -53,8 +53,8 @@ def safe_aggregate_mode(fc, prop, default='Unknown'):
     hist = ee.Dictionary(
         ee.Algorithms.If(fc.size().gt(0), fc.aggregate_histogram(prop), ee.Dictionary({}))
     )
-    keys      = hist.keys()
-    values    = hist.values()
+    keys = hist.keys()
+    values = hist.values()
     max_index = values.indexOf(values.reduce(ee.Reducer.max()))
     mode = ee.Algorithms.If(
         keys.size().gt(0),
@@ -70,11 +70,11 @@ def safe_aggregate_min(fc, prop, default):
 
 # --- compute attributes (with distance‐weighted sources) ---
 def add_attrs(tile):
-    tile_geom   = tile.geometry()
+    tile_geom = tile.geometry()
     buffer_geom = tile_geom.buffer(5000)  # 5 km buffer
 
     # 1) choose sources inside tile. if none, use buffer
-    in_tile  = water_points.filterBounds(tile_geom).filter(ee.Filter.eq('status_id', 'Yes'))
+    in_tile = water_points.filterBounds(tile_geom).filter(ee.Filter.eq('status_id', 'Yes'))
     in_buffer = water_points.filterBounds(buffer_geom).filter(ee.Filter.eq('status_id', 'Yes'))
     functional = ee.FeatureCollection(
         ee.Algorithms.If(in_tile.size().gt(0), in_tile, in_buffer)
@@ -82,12 +82,12 @@ def add_attrs(tile):
 
     # 2) raw counts & simple stats
     num_sources = functional.size()
-    pressure    = safe_aggregate_mean(functional, 'pressure_score', 0)
-    pop         = safe_aggregate_mean(functional, 'water_point_population', 0)
+    pressure = safe_aggregate_mean(functional, 'pressure_score', 0)
+    pop = safe_aggregate_mean(functional, 'water_point_population', 0)
 
-    # 3) normalize
-    norm_pressure = ee.Number(pressure).divide(1.5)
-    norm_pop      = ee.Number(pop).divide(1000)
+    # 3) normalize & cap
+    norm_pressure = ee.Number(pressure).divide(1.5).min(2.0)
+    norm_pop = ee.Number(pop).divide(1000).min(5.0) 
 
     # 4) distance‐weighted source score
     var_centroid = tile_geom.centroid()
@@ -100,7 +100,8 @@ def add_attrs(tile):
                         .subtract(ee.Number(f.get('dist')).divide(max_dist))
                         .max(0))
     )
-    sum_w = ee.Number(weighted.aggregate_sum('w'))
+    sum_w = ee.Number(weighted.aggregate_sum('w')).min(10)
+    
     # scale so max (8 pumps at weight=1) → 0.4 contribution
     weighted_score = sum_w.divide(8).multiply(0.4)
 
