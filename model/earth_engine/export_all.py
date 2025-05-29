@@ -25,20 +25,20 @@ def make_tile(x, y):
     x = ee.Number(x)
     y = ee.Number(y)
     geom = ee.Geometry.Rectangle([x, y, x.add(dx), y.add(dy)])
-    tile_id = (
-        ee.String('tile_')
-          .cat(x.format('%.3f'))
-          .cat('_')
-          .cat(y.format('%.3f'))
-    )
-    return ee.Feature(geom, {'tile_id': tile_id})
+    return ee.Feature(geom)
 
 xs = ee.List.sequence(ROI_BOUNDS[0], ROI_BOUNDS[2] - dx, dx)
 ys = ee.List.sequence(ROI_BOUNDS[1], ROI_BOUNDS[3] - dy, dy)
 tiles_nested = xs.map(lambda x: ys.map(lambda y: make_tile(x, y)))
 tiles_flat = tiles_nested.flatten()
 tile_fc = ee.FeatureCollection(tiles_flat)
-sampled_fc = tile_fc.randomColumn().sort('random').limit(NUM_TILES)
+sampled_fc_raw = tile_fc.randomColumn().sort('random').limit(NUM_TILES)
+
+# --- assign tile_id to match image export ---
+sampled_list = sampled_fc_raw.toList(NUM_TILES)
+sampled_fc = ee.FeatureCollection(ee.List.sequence(0, NUM_TILES - 1).map(
+    lambda i: ee.Feature(sampled_list.get(i)).set('tile_id', ee.String('tile_').cat(ee.Number(i).format()))
+))
 
 # --- load water point dataset ---
 water_points = ee.FeatureCollection('users/cadenchen/kenya_expanded')
@@ -96,9 +96,7 @@ def add_attrs(tile):
     )
     max_dist = 10000  # 10 km
     weighted = with_dist.map(lambda f:
-        f.set('w', ee.Number(1)
-                        .subtract(ee.Number(f.get('dist')).divide(max_dist))
-                        .max(0))
+        f.set('w', ee.Number(1).subtract(ee.Number(f.get('dist')).divide(max_dist)).max(0))
     )
     sum_w = ee.Number(weighted.aggregate_sum('w')).min(10)
     
@@ -155,7 +153,7 @@ feature_task = ee.batch.Export.table.toDrive(
 )
 feature_task.start()
 print("feature csv export task started.")
-
+"""
 # --- export image tiles ---
 sampled_list = sampled_fc.toList(NUM_TILES)
 for i in range(NUM_TILES):
@@ -174,3 +172,4 @@ for i in range(NUM_TILES):
         print(f"started export task {i + 1} / {NUM_TILES}")
 
 print(f"started export tasks for {NUM_TILES} image tiles.")
+"""
