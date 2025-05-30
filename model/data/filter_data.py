@@ -19,11 +19,18 @@ df = df[
 """
 
 # --- include all of kenya and uganda ---
+"""
 df = df[
     (df['latitude'] > -2.5) & (df['latitude'] < 5.2) &
     (df['longitude'] > 29.5) & (df['longitude'] < 42.1)
 ]
+"""
 
+# --- all of africa ---
+df = df[
+    (df['latitude'] > -35.0) & (df['latitude'] < 38.0) &
+    (df['longitude'] > -18.0) & (df['longitude'] < 52.0)
+]
 
 
 # --- keep relevant columns ---
@@ -69,4 +76,4 @@ if 'is_urban' in df.columns:
     df['is_urban'] = df['is_urban'].where(df['is_urban'].isin(['true', 'false']), 'false')
 
 # --- export cleaned version ---
-df.to_csv('kenya_expanded.csv', index=False)
+df.to_csv('raw_full.csv', index=False)
