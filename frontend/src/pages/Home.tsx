@@ -26,6 +26,14 @@ const Home: React.FC = () => {
     const path = d3.geoPath(projection);
     const color = d3.scaleSequential(d3.interpolateYlGnBu).domain([-0.1, 2.0]);
 
+
+    svg.append("defs").append("clipPath")
+      .attr("id", "globeClip")
+      .append("circle")
+      .attr("cx", width / 2)
+      .attr("cy", height / 2)
+      .attr("r", projection.scale());
+
     const g = svg.append("g");
 
     const globeCircle = g.append("circle")
@@ -55,6 +63,7 @@ const Home: React.FC = () => {
       land = g.selectAll("path")
         .data(countries.features)
         .enter().append("path")
+        .attr("clip-path", "url(#globeClip)")
         .attr("fill", "#1e3d59")
         .attr("stroke", "#888")
         .attr("stroke-width", 0.3)
@@ -63,6 +72,7 @@ const Home: React.FC = () => {
       points = g.selectAll("circle.data-point")
         .data(data)
         .enter().append("circle")
+        .attr("clip-path", "url(#globeClip)")
         .attr("class", "data-point")
         .attr("r", 0)
         .attr("fill", d => color(d.score))
@@ -87,6 +97,9 @@ const Home: React.FC = () => {
         points
           .attr("cx", d => projection([d.lon, d.lat])[0])
           .attr("cy", d => projection([d.lon, d.lat])[1]);
+
+        svg.select("#globeClip circle")
+          .attr("r", projection.scale());
       };
 
       const animatePoints = () => {
@@ -110,12 +123,12 @@ const Home: React.FC = () => {
       update();
       animatePoints();
 
-      // --- Zoom to Data ---
+
       (window as any).zoomToData = () => {
         if (!land || !points) return;
 
         setPaused(true);
-        const targetScale = initialScale * 6;
+        const targetScale = initialScale * 18;
 
         const currentRotate = projection.rotate();
         const targetRotate: [number, number, number] = [-dataCentroid[0], -dataCentroid[1], 0];
@@ -133,15 +146,11 @@ const Home: React.FC = () => {
 
               globeCircle.attr("r", projection.scale());
 
-              land.attr("d", path);
-              points
-                .attr("cx", d => projection([d.lon, d.lat])[0])
-                .attr("cy", d => projection([d.lon, d.lat])[1]);
+              update();
             };
           });
       };
 
-      // --- Reset Zoom ---
       (window as any).resetZoom = () => {
         const currentRotate = projection.rotate();
         const defaultRotate: [number, number, number] = [-33.5, -1, 0];
@@ -159,18 +168,13 @@ const Home: React.FC = () => {
 
               globeCircle.attr("r", projection.scale());
 
-              land.attr("d", path).attr("fill", "#1e3d59");
-              points
-                .attr("cx", d => projection([d.lon, d.lat])[0])
-                .attr("cy", d => projection([d.lon, d.lat])[1])
-                .attr("r", 3)
-                .attr("opacity", 1);
+              update();
             };
           })
           .on("end", () => setPaused(false));
       };
     });
-  }, [paused]);
+  }, []); 
 
   return (
     <div className="home-container">
