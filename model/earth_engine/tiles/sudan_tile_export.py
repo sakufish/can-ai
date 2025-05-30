@@ -77,7 +77,7 @@ ee.batch.Export.table.toDrive(
 ).start()
 
 print("feature CSV export started.")
-"""
+
 # --- export sentinel 2 image tiles ---
 sampled_list = sampled_fc.toList(NUM_TILES)
 for i in range(NUM_TILES):
@@ -97,4 +97,3 @@ for i in range(NUM_TILES):
         print(f"started export task {i + 1} / {NUM_TILES}")
 
 print(f"started export tasks for {NUM_TILES} image tiles.")
-"""
