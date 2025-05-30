@@ -20,6 +20,16 @@ composite = collection.median().select(['B4', 'B3', 'B2'])
 elevation = ee.Image('USGS/SRTMGL1_003')
 slope = ee.Terrain.slope(elevation)
 
+# --- additional features ---
+landcover = ee.ImageCollection("ESA/WorldCover/v100").first().select('Map')
+ndvi = collection.median().normalizedDifference(['B8', 'B4']).rename('NDVI')
+viirs = ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG') \
+    .filterDate('2022-01-01', '2022-01-31') \
+    .median().select('avg_rad')
+water_occurrence = ee.Image('JRC/GSW1_3/GlobalSurfaceWater').select('occurrence')
+permanent_water = water_occurrence.gt(80)
+water_distance = permanent_water.Not().fastDistanceTransform(30).sqrt().multiply(30).rename('distance_to_water')
+
 # --- generate tile grids ---
 def make_tile(x, y):
     x = ee.Number(x)
@@ -37,7 +47,7 @@ sampled_fc_raw = tile_fc.randomColumn().sort('random').limit(NUM_TILES)
 # --- assign tile_id to match image export ---
 sampled_list = sampled_fc_raw.toList(NUM_TILES)
 sampled_fc = ee.FeatureCollection(ee.List.sequence(0, NUM_TILES - 1).map(
-    lambda i: ee.Feature(sampled_list.get(i)).set('tile_id', ee.String('tile_').cat(ee.Number(i).format()))
+    lambda i: ee.Feature(sampled_list.get(i)).set('tile_id', ee.String('tile_').cat(ee.Number(i).toInt().format('%d')))
 ))
 
 # --- load water point dataset ---
@@ -99,8 +109,6 @@ def add_attrs(tile):
         f.set('w', ee.Number(1).subtract(ee.Number(f.get('dist')).divide(max_dist)).max(0))
     )
     sum_w = ee.Number(weighted.aggregate_sum('w')).min(10)
-    
-    # scale so max (8 pumps at weight=1) → 0.4 contribution
     weighted_score = sum_w.divide(8).multiply(0.4)
 
     # 5) category bonus
@@ -129,6 +137,39 @@ def add_attrs(tile):
         scale=30
     ).get('slope')
 
+    # 8) land cover
+    lc = landcover.reduceRegion(
+        reducer=ee.Reducer.mode(),
+        geometry=tile_geom,
+        scale=10,
+        maxPixels=1e8
+    ).get('Map')
+
+    # 9) ndvi (vegetation health)
+    mean_ndvi = ndvi.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=tile_geom,
+        scale=10,
+        maxPixels=1e8
+    ).get('NDVI')
+
+    # 10) nighttime lights
+    night = viirs.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=tile_geom,
+        scale=500,
+        maxPixels=1e8
+    ).get('avg_rad')
+
+    # 11) waterbody distance
+    raw_dist = water_distance.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=tile_geom,
+        scale=30,
+        maxPixels=1e8
+    ).get('distance_to_water')
+    capped_dist = ee.Number(raw_dist).min(2000)
+
     return tile.set({
         'score': var_score,
         'pressure_score': pressure,
@@ -139,7 +180,11 @@ def add_attrs(tile):
         'water_source_category': category,
         'category_bonus': category_bonus,
         'elevation': elev,
-        'slope': slp
+        'slope': slp,
+        'land_cover_class': lc,
+        'mean_ndvi': mean_ndvi,
+        'nighttime_light': night,
+        'mean_distance_to_water': capped_dist
     })
 
 feature_collection = sampled_fc.map(add_attrs)
@@ -153,7 +198,7 @@ feature_task = ee.batch.Export.table.toDrive(
 )
 feature_task.start()
 print("feature csv export task started.")
-"""
+
 # --- export image tiles ---
 sampled_list = sampled_fc.toList(NUM_TILES)
 for i in range(NUM_TILES):
@@ -172,4 +217,3 @@ for i in range(NUM_TILES):
         print(f"started export task {i + 1} / {NUM_TILES}")
 
 print(f"started export tasks for {NUM_TILES} image tiles.")
-"""
