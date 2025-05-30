@@ -2,21 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Kenya Water Equity Heatmap Globe</title>
+  <title>Kenya Water Equity Globe Heatmap</title>
   <style>
     body {
       margin: 0;
       background: #0e1a2b;
-      color: white;
       font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      color: white;
     }
     svg {
-      width: 800px;
-      height: 800px;
+      width: 100vw;
+      height: 100vh;
+      display: block;
     }
     .tooltip {
       position: absolute;
@@ -38,66 +35,90 @@
   <script src="https://d3js.org/topojson.v3.min.js"></script>
 
   <script>
-    const width = 800;
-    const height = 800;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
     const svg = d3.select("#globe");
     const tooltip = d3.select("#tooltip");
 
     const projection = d3.geoOrthographic()
-      .scale(350)
+      .scale(height / 2.3)
       .translate([width / 2, height / 2])
       .rotate([-33.5, -1.0]);
 
     const path = d3.geoPath(projection);
 
     const color = d3.scaleSequential(d3.interpolateYlGnBu)
-      .domain([-0.1, 2.0]);  
+      .domain([-0.1, 2.0]);
 
     const g = svg.append("g");
 
-    
     g.append("circle")
       .attr("fill", "#081421")
-      .attr("stroke", "#aaa")
+      .attr("stroke", "#999")
       .attr("cx", width / 2)
       .attr("cy", height / 2)
       .attr("r", projection.scale());
 
-    
     Promise.all([
       d3.json("https://unpkg.com/world-atlas@2.0.2/countries-110m.json"),
-      d3.json("kenya_water_equity.json")  
+      d3.json("kenya_water_equity.json")
     ]).then(([world, data]) => {
       const countries = topojson.feature(world, world.objects.countries);
 
-      
-      g.selectAll("path")
+      const land = g.selectAll("path")
         .data(countries.features)
         .enter().append("path")
-        .attr("fill", "#172a3a")
-        .attr("stroke", "#666")
+        .attr("fill", "#1e3d59")
+        .attr("stroke", "#aaa")
         .attr("d", path);
 
-      
-      g.selectAll("circle.data-point")
+      const points = g.selectAll("circle.data-point")
         .data(data)
         .enter().append("circle")
         .attr("class", "data-point")
-        .attr("cx", d => projection([d.lon, d.lat])[0])
-        .attr("cy", d => projection([d.lon, d.lat])[1])
         .attr("r", 3)
         .attr("fill", d => color(d.score))
         .attr("stroke", "#fff")
-        .attr("stroke-width", 0.2)
+        .attr("stroke-width", 0.3)
         .on("mouseover", (event, d) => {
           tooltip.style("display", "block")
-                 .style("left", (event.pageX + 10) + "px")
-                 .style("top", (event.pageY - 10) + "px")
-                 .html(`Lat: ${d.lat.toFixed(2)}, Lon: ${d.lon.toFixed(2)}<br>Score: ${d.score.toFixed(2)}`);
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 10) + "px")
+            .html(`Lat: ${d.lat.toFixed(2)}, Lon: ${d.lon.toFixed(2)}<br>Score: ${d.score.toFixed(2)}`);
         })
         .on("mouseout", () => tooltip.style("display", "none"));
+
+      function update() {
+        land.attr("d", path);
+        points
+          .attr("cx", d => projection([d.lon, d.lat])[0])
+          .attr("cy", d => projection([d.lon, d.lat])[1]);
+      }
+
+      let rotateSpeed = 0.02;
+      let paused = false;
+      d3.timer(() => {
+        if (!paused) {
+          const rotate = projection.rotate();
+          rotate[0] += rotateSpeed;
+          projection.rotate(rotate);
+          update();
+        }
+      });
+
+      svg.call(d3.drag()
+        .on("start", () => { paused = true; })
+        .on("drag", (event) => {
+          const rotate = projection.rotate();
+          const k = 0.25;
+          projection.rotate([rotate[0] + event.dx * k, rotate[1] - event.dy * k]);
+          update();
+        })
+        .on("end", () => { paused = false; })
+      );
+
+      update();
     });
   </script>
 </body>
 </html>
-
