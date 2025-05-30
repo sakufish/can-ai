@@ -1,134 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Kenya Water Equity Hexbin Globe</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
-  <script src="https://d3js.org/d3-hexbin.v0.2.min.js"></script>
-  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Kenya Water Equity Heatmap Globe</title>
   <style>
     body {
       margin: 0;
-      background: #000;
-    }
-
-    svg {
-      width: 100vw;
+      background: #0e1a2b;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
-      display: block;
     }
-
-    .sphere {
-      fill: #111;
-      stroke: #666;
-      stroke-width: 1px;
+    svg {
+      width: 800px;
+      height: 800px;
     }
-
-    .graticule {
-      fill: none;
-      stroke: #333;
-      stroke-width: 0.5px;
-      opacity: 0.6;
-    }
-
-    .land {
-      fill: #222;
-      stroke: #555;
-      stroke-width: 0.4px;
-      opacity: 0.8;
-    }
-
-    .hexagon {
-      stroke: #111;
-      stroke-width: 0.2px;
+    .tooltip {
+      position: absolute;
+      background: white;
+      color: black;
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      pointer-events: none;
+      display: none;
     }
   </style>
 </head>
 <body>
-<svg></svg>
-<script>
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const svg = d3.select("svg");
-  const g = svg.append("g");
+  <div id="tooltip" class="tooltip"></div>
+  <svg id="globe"></svg>
 
-  const projection = d3.geoOrthographic()
-    .scale(height / 1.5)
-    .translate([width / 2, height / 2])
-    .rotate([0, -20]) // Initial rotation
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
 
-  const path = d3.geoPath(projection);
-  const graticule = d3.geoGraticule();
+  <script>
+    const width = 800;
+    const height = 800;
+    const svg = d3.select("#globe");
+    const tooltip = d3.select("#tooltip");
 
-  g.append("path")
-    .datum({ type: "Sphere" })
-    .attr("class", "sphere")
-    .attr("d", path);
+    const projection = d3.geoOrthographic()
+      .scale(350)
+      .translate([width / 2, height / 2])
+      .rotate([-33.5, -1.0]);
 
-  g.append("path")
-    .datum(graticule())
-    .attr("class", "graticule")
-    .attr("d", path);
-
-
-  d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json").then(worldData => {
-    const land = topojson.feature(worldData, worldData.objects.land);
-    g.append("path")
-      .datum(land)
-      .attr("class", "land")
-      .attr("d", path);
-  });
-
-
-  d3.json("kenya_water_equity.json").then(data => {
-    const hexbin = d3.hexbin()
-      .radius(10)
-      .x(d => projection([d.lon, d.lat])[0])
-      .y(d => projection([d.lon, d.lat])[1]);
+    const path = d3.geoPath(projection);
 
     const color = d3.scaleSequential(d3.interpolateYlGnBu)
-      .domain([0, 1.5]);
+      .domain([-0.1, 2.0]);  
 
-    const render = () => {
-      const visibleData = data.filter(d => {
-        const point = projection([d.lon, d.lat]);
-        return point && !isNaN(point[0]) && !isNaN(point[1]);
-      });
+    const g = svg.append("g");
 
-      const hexes = hexbin(visibleData);
+    
+    g.append("circle")
+      .attr("fill", "#081421")
+      .attr("stroke", "#aaa")
+      .attr("cx", width / 2)
+      .attr("cy", height / 2)
+      .attr("r", projection.scale());
 
-      g.selectAll("path.hexagon").remove(); 
+    
+    Promise.all([
+      d3.json("https://unpkg.com/world-atlas@2.0.2/countries-110m.json"),
+      d3.json("kenya_water_equity.json")  
+    ]).then(([world, data]) => {
+      const countries = topojson.feature(world, world.objects.countries);
 
-      g.selectAll("path.hexagon")
-        .data(hexes)
-        .enter()
-        .append("path")
-        .attr("class", "hexagon")
-        .attr("d", hexbin.hexagon())
-        .attr("transform", d => `translate(${d.x},${d.y})`)
-        .attr("fill", d => color(d3.mean(d, p => p.score)));
-    };
+      
+      g.selectAll("path")
+        .data(countries.features)
+        .enter().append("path")
+        .attr("fill", "#172a3a")
+        .attr("stroke", "#666")
+        .attr("d", path);
 
-    render();
-
-    // Zoom to Kenya after a short delay
-    const kenyaCoords = [37.9062, 0.0236]; // [lon, lat]
-    const newRotation = [-kenyaCoords[0], -kenyaCoords[1]];
-
-    d3.transition()
-      .duration(2000)
-      .tween("rotate", () => {
-        const interp = d3.interpolate(projection.rotate(), newRotation);
-        return t => {
-          projection.rotate(interp(t));
-          g.selectAll("path.sphere").attr("d", path);
-          g.selectAll("path.graticule").attr("d", path);
-          g.selectAll("path.land").attr("d", path);
-          render(); 
-        };
-      });
-  });
-</script>
+      
+      g.selectAll("circle.data-point")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "data-point")
+        .attr("cx", d => projection([d.lon, d.lat])[0])
+        .attr("cy", d => projection([d.lon, d.lat])[1])
+        .attr("r", 3)
+        .attr("fill", d => color(d.score))
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 0.2)
+        .on("mouseover", (event, d) => {
+          tooltip.style("display", "block")
+                 .style("left", (event.pageX + 10) + "px")
+                 .style("top", (event.pageY - 10) + "px")
+                 .html(`Lat: ${d.lat.toFixed(2)}, Lon: ${d.lon.toFixed(2)}<br>Score: ${d.score.toFixed(2)}`);
+        })
+        .on("mouseout", () => tooltip.style("display", "none"));
+    });
+  </script>
 </body>
 </html>
+
