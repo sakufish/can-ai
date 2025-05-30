@@ -1,12 +1,13 @@
-import { Routes, Route } from 'react-router-dom'
-import Home from './pages/Home.tsx'
+import React from 'react';
+import Home from './pages/Home'; 
 
-export default function App() {
+const App: React.FC = () => {
   return (
-    <div className="p-4">
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
+    <div className="App">
+      <Home />
     </div>
-  )
-}
+  );
+};
+
+export default App;
+
