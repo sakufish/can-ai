@@ -2,10 +2,10 @@ import ee
 
 ee.Initialize(project='gen-lang-client-0972336843')
 
-# --- south sudan bounds ---
-ROI_BOUNDS = [29.0, 5.0, 29.6, 5.5]
+# --- Kampala  ---
+ROI_BOUNDS = [32.6, 0.3, 32.85, 0.7]
 dx, dy = 0.01, 0.01
-NUM_TILES = 3000
+NUM_TILES = 1000
 
 roi = ee.Geometry.Rectangle(ROI_BOUNDS)
 
@@ -42,7 +42,7 @@ tile_fc = ee.FeatureCollection(tiles).limit(NUM_TILES)
 # --- assign correct tile id ---
 sampled_fc = ee.FeatureCollection(ee.List.sequence(0, NUM_TILES - 1).map(
     lambda i: ee.Feature(tile_fc.toList(NUM_TILES).get(i)).set(
-        'tile_id', ee.String('sudan_tile_').cat(ee.Number(i).toInt().format()))
+        'tile_id', ee.String('tile_').cat(ee.Number(i).toInt().format()))
 ))
 
 # --- add the features only ---
@@ -85,9 +85,9 @@ for i in range(NUM_TILES):
     tile_geom = tile.geometry()
     export_task = ee.batch.Export.image.toDrive(
         image=composite.clip(tile_geom),
-        description=f"sudan_tile_{i}",
+        description=f"tile_{i}",
         folder="EarthEngineExports",
-        fileNamePrefix=f"sudan_tile_{i}",
+        fileNamePrefix=f"tile_{i}",
         region=tile_geom,
         scale=10,
         maxPixels=100000000

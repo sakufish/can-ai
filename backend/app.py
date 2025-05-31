@@ -1,5 +1,5 @@
 import os
-import pickle
+import joblib
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify
 from PIL import Image
 import numpy as np
 import json
+from flask_cors import CORS
+
 
 # --------------------------
 # model definition
@@ -35,21 +37,20 @@ class CNNTFMModel(nn.Module):
 # --------------------------
 # Configurations
 # --------------------------
-MODEL_PATH = "model/best_model"  
+MODEL_PATH = "model/best_model.pth"  
 FEATURE_SCALER_PATH = "scalers/feature_scaler.pkl"
 SCORE_SCALER_PATH = "scalers/score_scaler.pkl"
 
 TABULAR_FEATURES = [
-   'elevation','land_cover_class','mean_distance_to_water','mean_ndvi','nighttime_light',
+   'elevation', 'land_cover_class', 'mean_distance_to_water', 'mean_ndvi', 'nighttime_light', 'slope'
 ]
+
 
 # --------------------------
 # load Model and scalers
 # --------------------------
-with open(FEATURE_SCALER_PATH, "rb") as f:
-    feature_scaler = pickle.load(f)
-with open(SCORE_SCALER_PATH, "rb") as f:
-    score_scaler = pickle.load(f)
+feature_scaler = joblib.load(FEATURE_SCALER_PATH)
+score_scaler = joblib.load(SCORE_SCALER_PATH)
 
 tabular_dim = len(TABULAR_FEATURES)
 model = CNNTFMModel(tabular_dim=tabular_dim)
@@ -69,6 +70,7 @@ img_transform = transforms.Compose([
 # app
 # --------------------------
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/predict/", methods=["POST"])
 def predict():
