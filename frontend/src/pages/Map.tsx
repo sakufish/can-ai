@@ -290,9 +290,9 @@ const Map = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 border-b border-gray-800/50 backdrop-blur-xl bg-black/20">
@@ -304,9 +304,9 @@ const Map = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Water Equity Predictor
+                  Water Access Mapper
                 </h1>
-                <p className="text-sm text-gray-400">AI-powered tile analysis platform</p>
+                <p className="text-sm text-gray-400">a ML-powered tile analysis platform</p>
               </div>
             </div>
             
@@ -490,7 +490,7 @@ const Map = () => {
           <div className="rounded-2xl bg-gray-800/50 border border-gray-700/50 backdrop-blur-sm overflow-hidden">
             <div className="p-4 border-b border-gray-700/50">
               <h2 className="text-lg font-semibold text-white">Predictions Results</h2>
-              <p className="text-sm text-gray-400">AI model predictions for water equity analysis</p>
+              <p className="text-sm text-gray-400">ML model predictions for water access analysis</p>
             </div>
             <div className="max-h-80 overflow-y-auto">
               <table className="w-full">
