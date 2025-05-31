@@ -4,8 +4,8 @@ from PIL import Image
 import numpy as np
 
 # --- directories ---
-src_dir = "./exports"
-dst_dir = "./converted_png"
+src_dir = "./exports_test"
+dst_dir = "./converted_test"
 
 os.makedirs(dst_dir, exist_ok=True)
 

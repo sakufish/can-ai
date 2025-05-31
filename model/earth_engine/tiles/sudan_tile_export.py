@@ -3,9 +3,9 @@ import ee
 ee.Initialize(project='gen-lang-client-0972336843')
 
 # --- Kampala  ---
-ROI_BOUNDS = [32.6, 0.3, 32.85, 0.7]
+ROI_BOUNDS = [32.70, 0.50, 32.80, 0.60]
 dx, dy = 0.01, 0.01
-NUM_TILES = 1000
+NUM_TILES = 100
 
 roi = ee.Geometry.Rectangle(ROI_BOUNDS)
 
@@ -71,7 +71,7 @@ feature_collection = sampled_fc.map(add_attrs)
 # --- export CSV ---
 ee.batch.Export.table.toDrive(
     collection=feature_collection,
-    description='sudan_tile_features',
+    description='tile_features100',
     folder='EarthEngineExports',
     fileFormat='CSV'
 ).start()
