@@ -1,6 +1,6 @@
 ***About***
 
-This project uses AI to predict local water access in underserved regions, helping address data gaps in communities often left out of national statistics. We focus on generating reliable, per-kilometer-square water access scores by combining satellite imagery with geospatial data.
+This project uses AI to predict local water access in under represented regions, helping address data gaps in communities often left out of national statistics. We focus on generating reliable, per-kilometer-square water access scores by combining satellite imagery with geospatial data.
 We applied our model to regions in Kenya and Uganda, but the system is generalizable to other parts of the world.
 
 ***Key Features***
