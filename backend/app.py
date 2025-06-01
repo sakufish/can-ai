@@ -72,6 +72,10 @@ img_transform = transforms.Compose([
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/ping", methods=["GET"])
+def ping():
+    return jsonify({"message": "pong"}), 200
+
 @app.route("/predict/", methods=["POST"])
 def predict():
     if "image" not in request.files or "features" not in request.form:
