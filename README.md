@@ -20,3 +20,4 @@ We started by generating thousands of 1km² tiles over Kenya and Uganda using Go
 ***notes***
 - Render Free often runs out of memory when starting up with the model
 - Stadia Maps membership lasts for 14 days
+- Currently only trained on Kenya and Uganda, will need continuous training across a more diverse dataset
